@@ -29,6 +29,17 @@ resource "azurerm_subnet" "examen_int" {
   ]
 }
 
+resource "azurerm_public_ip" "examen_pip" {
+  name                = "${var.prefix}pip"
+  location            = azurerm_resource_group.examen_rg.location
+  resource_group_name = azurerm_resource_group.examen_rg.name
+  allocation_method   = "Dynamic"
+
+  tags = {
+    environment = "examen"
+  }
+}
+
 resource "azurerm_network_interface" "examen_nic" {
   name                = "${var.prefix}nic"
   location            = azurerm_resource_group.examen_rg.location
@@ -38,6 +49,7 @@ resource "azurerm_network_interface" "examen_nic" {
     name                          = "examen_ip_config"
     subnet_id                     = azurerm_subnet.examen_int.id
     private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = azurerm_public_ip.examen_pip.id
   }
 
   tags = {
@@ -45,17 +57,6 @@ resource "azurerm_network_interface" "examen_nic" {
   }
 }
 
-resource "azurerm_public_ip" "examen_pip" {
-  name                    = "${var.prefix}pip"
-  location                = azurerm_resource_group.examen_rg.location
-  resource_group_name     = azurerm_resource_group.examen_rg.name
-  allocation_method       = "Dynamic"
-  idle_timeout_in_minutes = 30
-
-  tags = {
-    environment = "examen"
-  }
-}
 
 resource "azurerm_network_security_group" "examen_nsg" {
   name                = "${var.prefix}nsg"
@@ -69,7 +70,7 @@ resource "azurerm_network_security_group" "examen_nsg" {
     access                     = "Allow"
     protocol                   = "Tcp"
     source_port_range          = "*"
-    destination_port_range     = "22"
+    destination_port_range     = "3389"
     source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
@@ -77,20 +78,6 @@ resource "azurerm_network_security_group" "examen_nsg" {
   tags = {
     environment = "examen"
   }
-}
-
-resource "azurerm_network_security_rule" "examen_nsr" {
-  name                        = "${var.prefix}nsr"
-  priority                    = 1002
-  direction                   = "Inbound"
-  access                      = "Allow"
-  protocol                    = "Tcp"
-  source_port_range           = "*"
-  destination_port_range      = "80"
-  source_address_prefix       = "*"
-  destination_address_prefix  = "*"
-  network_security_group_name = azurerm_network_security_group.examen_nsg.name
-  resource_group_name         = azurerm_resource_group.examen_rg.name
 }
 
 resource "azurerm_network_interface_security_group_association" "examen_sg_asc" {
